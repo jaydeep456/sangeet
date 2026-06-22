@@ -2,30 +2,28 @@ const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 
-// Configure Cloudinary with credentials from environment variables
+// Configure using credentials from .env
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
+  api_key:    process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Set up Cloudinary storage for multer
+// Multer storage: auto-uploads to Cloudinary
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'sangeet-products',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 800, height: 1000, crop: 'limit', quality: 'auto' }],
+    transformation: [
+      { width: 900, height: 1100, crop: 'limit', quality: 'auto:good' },
+    ],
   },
 });
 
-// File filter: only allow image files
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed!'), false);
-  }
+  if (file.mimetype.startsWith('image/')) cb(null, true);
+  else cb(new Error('Only image files are allowed'), false);
 };
 
 const upload = multer({

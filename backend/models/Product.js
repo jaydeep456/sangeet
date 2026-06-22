@@ -1,53 +1,49 @@
 const mongoose = require('mongoose');
 
-/**
- * Product Schema for SANGEET clothing brand.
- * Stores product details including Cloudinary image URL.
- */
 const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, 'Product name is required'],
       trim: true,
-      maxlength: [100, 'Product name cannot exceed 100 characters'],
+      maxlength: [100, 'Name cannot exceed 100 characters'],
     },
     price: {
       type: Number,
-      required: [true, 'Product price is required'],
+      required: [true, 'Price is required'],
       min: [0, 'Price cannot be negative'],
     },
     size: {
       type: String,
-      required: [true, 'Product size is required'],
+      required: [true, 'Size is required'],
       enum: {
         values: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'],
-        message: 'Size must be one of: XS, S, M, L, XL, XXL, Free Size',
+        message: '{VALUE} is not a valid size',
       },
     },
+    category: {
+      type: String,
+      default: 'Ethnic',
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [500, 'Description cannot exceed 500 characters'],
+    },
+    // Cloudinary public image URL (shown to users)
     image: {
       type: String,
       default: '',
     },
-    cloudinaryId: {
+    // Cloudinary public_id — used to DELETE the image from Cloudinary
+    cloudinaryPublicId: {
       type: String,
       default: '',
-    },
-    description: {
-      type: String,
-      trim: true,
-      maxlength: [500, 'Description cannot exceed 500 characters'],
-      default: '',
-    },
-    category: {
-      type: String,
-      trim: true,
-      default: 'Ethnic',
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model('Product', productSchema);

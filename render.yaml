@@ -11,3 +11,13 @@ services:
         value: 5000
       - key: NODE_ENV
         value: production
+      - key: MONGO_URI
+        sync: false        # You will fill this in Render dashboard
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false        # You will fill this in Render dashboard
+      - key: CLOUDINARY_API_KEY
+        sync: false        # You will fill this in Render dashboard
+      - key: CLOUDINARY_API_SECRET
+        sync: false        # You will fill this in Render dashboard
+      - key: FRONTEND_URL
+        sync: false        # Set to your Vercel frontend URL
