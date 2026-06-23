@@ -15,6 +15,11 @@ const Products = () => {
   const [searchInput, setSearchInput] = useState('');
   const [size, setSize] = useState('All');
 
+  // Read auth state
+  const userJson = localStorage.getItem('sangeet_user');
+  const user = userJson ? JSON.parse(userJson) : null;
+  const isAdmin = user && user.role === 'admin';
+
   // Debounce search input
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 400);
@@ -81,9 +86,11 @@ const Products = () => {
             {loading ? '...' : `${products.length} item${products.length !== 1 ? 's' : ''}`}
           </span>
 
-          <Link to="/add-product" id="add-product-btn" className="btn-add-fab">
-            <i className="bi bi-plus-lg" /> Add Product
-          </Link>
+          {isAdmin && (
+            <Link to="/add-product" id="add-product-btn" className="btn-add-fab">
+              <i className="bi bi-plus-lg" /> Add Product
+            </Link>
+          )}
         </div>
 
         {/* Grid */}

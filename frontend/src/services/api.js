@@ -8,10 +8,26 @@ const BASE_URL = import.meta.env.VITE_API_URL
 
 const api = axios.create({ baseURL: BASE_URL, timeout: 15000 });
 
+// Attach JWT token to every request if available
+api.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('sangeet_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  err => Promise.reject(err)
+);
+
 api.interceptors.response.use(
   res => res,
   err => Promise.reject(new Error(err?.response?.data?.message || err.message || 'An error occurred'))
 );
+
+// Auth operations
+export const login  = (username, password) => api.post('/auth/login', { username, password });
+export const signup = (username, password) => api.post('/auth/signup', { username, password });
 
 export const getProducts   = (search = '', size = '') =>
   api.get('/products', { params: { ...(search && { search }), ...(size && size !== 'All' && { size }) } });

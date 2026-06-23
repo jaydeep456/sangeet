@@ -16,56 +16,63 @@ const features = [
   { icon: '🚚', title: 'White-Glove Delivery', desc: 'Complimentary express shipping with elegant gift packaging on every order.' },
 ];
 
-const Home = () => (
-  <main className="page-enter">
+const Home = () => {
+  const userJson = localStorage.getItem('sangeet_user');
+  const user = userJson ? JSON.parse(userJson) : null;
+  const isAdmin = user && user.role === 'admin';
 
-    {/* ── Gold Marquee Ticker ──────────────────────────── */}
-    <div className="marquee-bar" aria-hidden="true">
-      <div className="marquee-track">
-        {tickers.map((t, i) => (
-          <span key={i} className="marquee-item">
-            {t} <span className="marquee-dot">✦</span>
-          </span>
-        ))}
+  return (
+    <main className="page-enter">
+
+      {/* ── Gold Marquee Ticker ──────────────────────────── */}
+      <div className="marquee-bar" aria-hidden="true">
+        <div className="marquee-track">
+          {tickers.map((t, i) => (
+            <span key={i} className="marquee-item">
+              {t} <span className="marquee-dot">✦</span>
+            </span>
+          ))}
+        </div>
       </div>
-    </div>
 
-    {/* ── Hero Section ─────────────────────────────────── */}
-    <section id="hero" className="hero-section">
-      <div className="container">
-        <div className="row align-items-center">
+      {/* ── Hero Section ─────────────────────────────────── */}
+      <section id="hero" className="hero-section">
+        <div className="container">
+          <div className="row align-items-center">
 
-          {/* Left — Copy */}
-          <div className="col-lg-7 hero-content">
-            <div className="hero-kicker">
-              <span className="hero-kicker-line" />
-              Premium Ethnic Couture
-              <span className="hero-kicker-line" />
-            </div>
+            {/* Left — Copy */}
+            <div className="col-lg-7 hero-content">
+              <div className="hero-kicker">
+                <span className="hero-kicker-line" />
+                Premium Ethnic Couture
+                <span className="hero-kicker-line" />
+              </div>
 
-            <h1 className="hero-h1">
-              Wear the<br />
-              <span className="shimmer-text">Rhythm</span> of<br />
-              Elegance
-            </h1>
+              <h1 className="hero-h1">
+                Wear the<br />
+                <span className="shimmer-text">Rhythm</span> of<br />
+                Elegance
+              </h1>
 
-            <p className="hero-sub">— Tune of Trends —</p>
-            <div className="hero-rule" />
+              <p className="hero-sub">— Tune of Trends —</p>
+              <div className="hero-rule" />
 
-            <p className="hero-desc">
-              Discover SANGEET's exquisite collection of luxury ethnic wear —
-              where every thread tells a story of royal heritage and contemporary grace.
-              From shimmering lehengas to regal sherwanis, dressed for every celebration.
-            </p>
+              <p className="hero-desc">
+                Discover SANGEET's exquisite collection of luxury ethnic wear —
+                where every thread tells a story of royal heritage and contemporary grace.
+                From shimmering lehengas to regal sherwanis, dressed for every celebration.
+              </p>
 
-            <div className="hero-btns">
-              <Link to="/products" id="hero-cta" className="btn-royal btn-royal-primary">
-                <i className="bi bi-grid-3x3-gap" /> View Collection
-              </Link>
-              <Link to="/add-product" id="hero-secondary" className="btn-royal btn-royal-ghost">
-                <i className="bi bi-plus-circle" /> Add Product
-              </Link>
-            </div>
+              <div className="hero-btns">
+                <Link to="/products" id="hero-cta" className="btn-royal btn-royal-primary">
+                  <i className="bi bi-grid-3x3-gap" /> View Collection
+                </Link>
+                {isAdmin && (
+                  <Link to="/add-product" id="hero-secondary" className="btn-royal btn-royal-ghost">
+                    <i className="bi bi-plus-circle" /> Add Product
+                  </Link>
+                )}
+              </div>
 
             <div className="hero-stats">
               {[['500+', 'Designs'], ['10K+', 'Clients'], ['15+', 'Yrs Legacy']].map(([n, l]) => (
@@ -162,7 +169,7 @@ const Home = () => (
         </p>
       </div>
     </footer>
-  </main>
-);
+  );
+};
 
 export default Home;

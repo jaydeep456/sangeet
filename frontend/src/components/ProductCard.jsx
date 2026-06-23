@@ -8,6 +8,11 @@ const ProductCard = ({ product, onDeleted }) => {
   const [deleting, setDeleting] = useState(false);
   const [imgErr, setImgErr] = useState(false);
 
+  // Read auth state
+  const userJson = localStorage.getItem('sangeet_user');
+  const user = userJson ? JSON.parse(userJson) : null;
+  const isAdmin = user && user.role === 'admin';
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -60,22 +65,24 @@ const ProductCard = ({ product, onDeleted }) => {
         </div>
 
         {/* Actions */}
-        <div className="product-actions">
-          <Link
-            to={`/edit-product/${product._id}`}
-            className="btn-edit"
-            id={`edit-${product._id}`}
-          >
-            <i className="bi bi-pencil-square" /> Update
-          </Link>
-          <button
-            className="btn-del"
-            id={`delete-${product._id}`}
-            onClick={() => setShowModal(true)}
-          >
-            <i className="bi bi-trash3" /> Delete
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="product-actions">
+            <Link
+              to={`/edit-product/${product._id}`}
+              className="btn-edit"
+              id={`edit-${product._id}`}
+            >
+              <i className="bi bi-pencil-square" /> Update
+            </Link>
+            <button
+              className="btn-del"
+              id={`delete-${product._id}`}
+              onClick={() => setShowModal(true)}
+            >
+              <i className="bi bi-trash3" /> Delete
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

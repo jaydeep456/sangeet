@@ -1,21 +1,52 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import AddProduct from './pages/AddProduct';
 import EditProduct from './pages/EditProduct';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+
+// Wrapper for Auth & Admin Routing
+const ProtectedRoute = ({ children, adminOnly = false }) => {
+  const location = useLocation();
+  const token = localStorage.getItem('sangeet_token');
+  const userJson = localStorage.getItem('sangeet_user');
+
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (adminOnly) {
+    const user = JSON.parse(userJson || '{}');
+    if (user.role !== 'admin') {
+      return <Navigate to="/" replace />;
+    }
+  }
+
+  return children;
+};
 
 function App() {
   return (
     <BrowserRouter>
       <Navbar />
       <Routes>
-        <Route path="/"                  element={<Home />} />
-        <Route path="/products"          element={<Products />} />
-        <Route path="/add-product"       element={<AddProduct />} />
-        <Route path="/edit-product/:id"  element={<EditProduct />} />
+        {/* Public Auth Routes */}
+        <Route path="/login"             element={<Login />} />
+        <Route path="/signup"            element={<Signup />} />
+
+        {/* Protected View Routes */}
+        <Route path="/"                  element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/products"          element={<ProtectedRoute><Products /></ProtectedRoute>} />
+
+        {/* Protected Admin Routes */}
+        <Route path="/add-product"       element={<ProtectedRoute adminOnly><AddProduct /></ProtectedRoute>} />
+        <Route path="/edit-product/:id"  element={<ProtectedRoute adminOnly><EditProduct /></ProtectedRoute>} />
+
+        {/* Fallback */}
         <Route path="*"                  element={<Navigate to="/" replace />} />
       </Routes>
 

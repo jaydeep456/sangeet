@@ -2,13 +2,36 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 const connectDB = require('./config/db');
-const productRoutes = require('./routes/products');
+const authRoutes = require('./routes/auth');
+const User       = require('./models/User');
+const bcrypt     = require('bcryptjs');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
+// Helper to seed admin user if not exists
+const seedAdmin = async () => {
+  try {
+    const admin = await User.findOne({ username: 'Sangeet' });
+    if (!admin) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('Sangeet@123', salt);
+      await User.create({
+        username: 'Sangeet',
+        password: hashedPassword,
+        role: 'admin'
+      });
+      console.log('👑 Admin user seeded successfully (Sangeet / Sangeet@123)');
+    }
+  } catch (err) {
+    console.error('⚠️  Admin seeding failed:', err.message);
+  }
+};
+
 // ── Connect to MongoDB Atlas ─────────────────────────────────
-connectDB();
+connectDB().then(() => {
+  seedAdmin();
+});
 
 // ── Middleware ───────────────────────────────────────────────
 app.use(cors({
@@ -20,6 +43,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── API Routes ───────────────────────────────────────────────
+app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 
 // ── Health Check ─────────────────────────────────────────────

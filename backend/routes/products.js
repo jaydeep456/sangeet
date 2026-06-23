@@ -2,6 +2,7 @@ const express  = require('express');
 const router   = express.Router();
 const Product  = require('../models/Product');
 const { upload, cloudinary } = require('../middleware/upload');
+const { protect, adminOnly } = require('../middleware/auth');
 
 // ─── Helper: Delete image from Cloudinary ────────────────────────────────
 const deleteCloudinaryImage = async (publicId) => {
@@ -16,7 +17,7 @@ const deleteCloudinaryImage = async (publicId) => {
 
 // ─── GET /api/products ───────────────────────────────────────────────────
 // Supports: ?search=name   &size=M
-router.get('/', async (req, res) => {
+router.get('/', protect, async (req, res) => {
   try {
     const { search = '', size = '' } = req.query;
     const query = {};
@@ -37,7 +38,7 @@ router.get('/', async (req, res) => {
 });
 
 // ─── GET /api/products/:id ───────────────────────────────────────────────
-router.get('/:id', async (req, res) => {
+router.get('/:id', protect, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
@@ -49,7 +50,7 @@ router.get('/:id', async (req, res) => {
 
 // ─── POST /api/products ──────────────────────────────────────────────────
 // Creates a new product. Image upload is optional (multipart/form-data).
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', protect, adminOnly, upload.single('image'), async (req, res) => {
   try {
     const { name, price, size, description = '', category = 'Ethnic' } = req.body;
 
@@ -85,7 +86,7 @@ router.post('/', upload.single('image'), async (req, res) => {
 
 // ─── PUT /api/products/:id ───────────────────────────────────────────────
 // Updates a product. If a new image is uploaded, the old Cloudinary image is deleted.
-router.put('/:id', upload.single('image'), async (req, res) => {
+router.put('/:id', protect, adminOnly, upload.single('image'), async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
@@ -125,7 +126,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
 
 // ─── DELETE /api/products/:id ────────────────────────────────────────────
 // Deletes the product from MongoDB AND removes its image from Cloudinary.
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
