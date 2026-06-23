@@ -169,6 +169,7 @@ const Home = () => {
         </p>
       </div>
     </footer>
+  </main>
   );
 };
 
