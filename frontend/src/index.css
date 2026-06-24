@@ -1362,14 +1362,17 @@ body::before {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(6px);
-  z-index: 2000;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9998;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
   animation: fadeIn var(--t-fast) var(--ease);
+  /* Prevent any ancestor scroll from affecting positioning */
+  overflow: hidden;
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -1381,15 +1384,20 @@ body::before {
   max-width: 400px;
   width: 100%;
   text-align: center;
-  box-shadow: var(--shadow-xl);
+  box-shadow: 0 25px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
   animation: slideUp var(--t-mid) var(--ease-back);
   border-top: 4px solid #C0392B;
+  /* Safety: if content somehow overflows on tiny screen, allow internal scroll */
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
 }
 
 @keyframes slideUp {
   from { transform: translateY(30px) scale(0.94); opacity: 0; }
   to   { transform: translateY(0) scale(1); opacity: 1; }
 }
+
 
 .modal-box h4 {
   font-family: var(--font-display);

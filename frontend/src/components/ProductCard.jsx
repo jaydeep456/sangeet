@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { deleteProduct } from '../services/api';
@@ -9,6 +10,16 @@ const ProductCard = ({ product, onDeleted }) => {
   const [deleting, setDeleting]       = useState(false);
   const [activeImg, setActiveImg]     = useState(0);
   const [lightboxIdx, setLightboxIdx] = useState(null); // null = closed
+
+  // Lock body scroll while delete modal is open
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showModal]);
 
   // Read auth state
   const userJson = localStorage.getItem('sangeet_user');
@@ -123,12 +134,18 @@ const ProductCard = ({ product, onDeleted }) => {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true">
+      {/* Delete Confirmation Modal — rendered via portal so it always centers on viewport */}
+      {showModal && createPortal(
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-modal-title"
+          onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}
+        >
           <div className="modal-box">
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗑️</div>
-            <h4>Delete Product?</h4>
+            <h4 id="delete-modal-title">Delete Product?</h4>
             <p>You are about to permanently remove</p>
             <p className="modal-product-name">"{product.name}"</p>
             <p>This cannot be undone.</p>
@@ -153,8 +170,10 @@ const ProductCard = ({ product, onDeleted }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
+
 
       {/* Lightbox */}
       {lightboxIdx !== null && images.length > 0 && (
