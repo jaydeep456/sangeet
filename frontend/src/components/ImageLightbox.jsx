@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * ImageLightbox
@@ -91,7 +92,7 @@ const ImageLightbox = ({ images = [], startIdx = 0, onClose }) => {
 
   if (!urls.length) return null;
 
-  return (
+  return createPortal(
     <div
       className="lightbox-overlay"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
@@ -171,7 +172,8 @@ const ImageLightbox = ({ images = [], startIdx = 0, onClose }) => {
           ))}
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
 
