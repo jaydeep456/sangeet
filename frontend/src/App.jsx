@@ -38,9 +38,9 @@ function App() {
         <Route path="/login"             element={<Login />} />
         <Route path="/signup"            element={<Signup />} />
 
-        {/* Protected View Routes */}
-        <Route path="/"                  element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/products"          element={<ProtectedRoute><Products /></ProtectedRoute>} />
+        {/* Public View Routes */}
+        <Route path="/"                  element={<Home />} />
+        <Route path="/products"          element={<Products />} />
 
         {/* Protected Admin Routes */}
         <Route path="/add-product"       element={<ProtectedRoute adminOnly><AddProduct /></ProtectedRoute>} />

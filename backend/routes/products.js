@@ -30,7 +30,7 @@ const deleteAllProductImages = async (product) => {
 
 // ─── GET /api/products ───────────────────────────────────────────────────
 // Supports: ?search=  &size=  &category=  &minPrice=  &maxPrice=  &sort=
-router.get('/', protect, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const {
       search   = '',
@@ -87,7 +87,7 @@ router.get('/', protect, async (req, res) => {
 });
 
 // ─── GET /api/products/:id ───────────────────────────────────────────────
-router.get('/:id', protect, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });

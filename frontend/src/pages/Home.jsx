@@ -159,7 +159,7 @@ const Home = () => {
             <div className="d-flex gap-4 justify-content-md-end flex-wrap">
               <Link to="/" className="footer-link">Home</Link>
               <Link to="/products" className="footer-link">Collection</Link>
-              <Link to="/add-product" className="footer-link">Add Product</Link>
+              {isAdmin && <Link to="/add-product" className="footer-link">Add Product</Link>}
             </div>
           </div>
         </div>

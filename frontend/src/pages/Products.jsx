@@ -210,7 +210,7 @@ const Products = () => {
                 product={p} 
                 onDeleted={handleDeleted} 
                 isSelected={selectedIds.includes(p._id)}
-                onToggleSelect={isAdmin && !isSharedView ? toggleSelect : undefined}
+                onToggleSelect={!isSharedView ? toggleSelect : undefined}
               />
             ))}
           </div>

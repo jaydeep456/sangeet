@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { login } from '../services/api';
@@ -11,6 +11,14 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('prefill') === 'admin') {
+      setUsername('Sangeet');
+      setPassword('Sangeet@123');
+    }
+  }, [location]);
 
   const from = location.state?.from?.pathname || '/';
 
