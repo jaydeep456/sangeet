@@ -214,10 +214,10 @@ const Products = () => {
 
     const selectedProducts = products.filter(p => selectedIds.includes(p._id));
     
-    let text = "✨ *Selected SANGEET Designs* ✨\n\n";
+    let text = "✨ *SANGEET Selected Designs* ✨\n\n";
     selectedProducts.forEach((p, idx) => {
-      text += `*${idx + 1}. ${p.name}*\n`;
-      text += `• Category: ${p.category}\n`;
+      text += `*Image ${idx + 1}: ${p.name}*\n`;
+      if (p.category) text += `• Category: ${p.category}\n`;
       if (p.sizes && p.sizes.length > 0) text += `• Sizes: ${p.sizes.join(', ')}\n`;
       text += `\n`;
     });
@@ -227,27 +227,27 @@ const Products = () => {
     try {
       let files = [];
       
-      if (navigator.share && navigator.canShare) {
-        const fetchPromises = selectedProducts.map(async p => {
-          if (p.images && p.images.length > 0) {
-            try {
-              const res = await fetch(p.images[0].url, { mode: 'cors' });
-              const blob = await res.blob();
-              let ext = 'jpg';
-              if (blob.type === 'image/png') ext = 'png';
-              else if (blob.type === 'image/webp') ext = 'webp';
-              return new File([blob], `${p.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${ext}`, { type: blob.type });
-            } catch (err) {
-              console.error('Fetch error:', err);
-              return null;
-            }
+      const fetchPromises = selectedProducts.map(async (p, idx) => {
+        if (p.images && p.images.length > 0) {
+          try {
+            const res = await fetch(p.images[0].url, { mode: 'cors' });
+            const blob = await res.blob();
+            let ext = 'jpg';
+            if (blob.type === 'image/png') ext = 'png';
+            else if (blob.type === 'image/webp') ext = 'webp';
+            
+            const safeName = p.name.replace(/[^a-z0-9]/gi, '_').substring(0, 30);
+            return new File([blob], `Image_${idx + 1}_${safeName}.${ext}`, { type: blob.type });
+          } catch (err) {
+            console.error('Fetch error:', err);
+            return null;
           }
-          return null;
-        });
-        
-        const results = await Promise.all(fetchPromises);
-        files = results.filter(f => f !== null);
-      }
+        }
+        return null;
+      });
+      
+      const results = await Promise.all(fetchPromises);
+      files = results.filter(f => f !== null);
 
       const shareData = {
         title: 'Sangeet Designs',
@@ -262,14 +262,29 @@ const Products = () => {
         toast.dismiss(toastId);
         await navigator.share(shareData);
       } else {
+        // Fallback for older devices / desktops
         toast.dismiss(toastId);
-        toast.success('Information ready! Redirecting...');
+        toast.success('Information copied! Downloading images to attach manually...', { duration: 4000 });
         navigator.clipboard.writeText(text);
         
+        // Trigger downloads for the images staggered to prevent browser blocking
+        files.forEach((f, i) => {
+          setTimeout(() => {
+            const url = URL.createObjectURL(f);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = f.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }, i * 300); 
+        });
+        
         setTimeout(() => {
-          const encodedText = encodeURIComponent(text);
+          const encodedText = encodeURIComponent(text + "\n*(Please attach the downloaded images)*");
           window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
-        }, 1000);
+        }, 1500);
       }
     } catch (err) {
       toast.dismiss(toastId);
