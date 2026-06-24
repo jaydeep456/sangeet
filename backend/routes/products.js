@@ -39,9 +39,17 @@ router.get('/', protect, async (req, res) => {
       minPrice = '',
       maxPrice = '',
       sort     = 'newest',
+      ids      = '', // <-- Added for sharing multiple products
     } = req.query;
 
     const query = {};
+
+    if (ids.trim()) {
+      const idArray = ids.split(',').map(id => id.trim()).filter(id => id);
+      if (idArray.length > 0) {
+        query._id = { $in: idArray };
+      }
+    }
 
     if (search.trim()) {
       // Search across name AND description

@@ -1967,8 +1967,6 @@ body::before {
   inset: 0;
   z-index: 9990;
   background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
   display: flex;
   justify-content: flex-end;
   animation: fadeInSidebarOverlay var(--t-fast) var(--ease) forwards;
@@ -2420,3 +2418,135 @@ body::before {
   }
 }
 
+/* ── Product Selection & Sharing Styles ── */
+.product-select-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all var(--t-fast) var(--ease);
+}
+.product-select-btn:hover {
+  background: var(--white);
+  color: var(--gold);
+  transform: scale(1.1);
+}
+.product-select-btn.selected {
+  background: var(--grad-emerald);
+  color: var(--gold-bright);
+}
+
+.selection-action-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9995;
+  background: var(--white);
+  padding: 12px 24px;
+  border-radius: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  animation: slideUpActionBar 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpActionBar {
+  from { transform: translate(-50%, 100%); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.selection-count {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.selection-count .count-badge {
+  background: var(--grad-gold);
+  color: var(--emerald);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 12px;
+}
+.selection-actions button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  transition: all var(--t-fast) var(--ease);
+}
+.btn-share-wa {
+  background: #25D366;
+  color: white;
+}
+.btn-share-wa:hover { background: #128C7E; transform: translateY(-2px); }
+
+.btn-share-link {
+  background: var(--ivory-deep);
+  color: var(--text-primary);
+}
+.btn-share-link:hover { background: var(--gold-pale); transform: translateY(-2px); }
+
+.btn-clear-selection {
+  background: transparent;
+  color: #E74C3C;
+}
+.btn-clear-selection:hover { background: rgba(231, 76, 60, 0.1); }
+
+/* Shared View actions */
+.shared-view-actions {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+}
+.btn-back-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--ivory);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--emerald);
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+}
+.btn-back-all:hover {
+  background: var(--grad-emerald);
+  color: var(--gold-bright);
+  border-color: transparent;
+}

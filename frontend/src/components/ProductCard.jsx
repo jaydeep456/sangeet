@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { deleteProduct } from '../services/api';
 import ImageLightbox from './ImageLightbox';
 
-const ProductCard = ({ product, onDeleted }) => {
+const ProductCard = ({ product, onDeleted, isSelected, onToggleSelect }) => {
   const [showModal, setShowModal]     = useState(false);
   const [deleting, setDeleting]       = useState(false);
   const [activeImg, setActiveImg]     = useState(0);
@@ -55,6 +55,18 @@ const ProductCard = ({ product, onDeleted }) => {
       <div className="product-card page-enter">
         {/* ── Image Gallery ── */}
         <div className="product-img-wrap">
+          {onToggleSelect && (
+            <button
+              className={`product-select-btn ${isSelected ? 'selected' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSelect(product._id);
+              }}
+              title="Select product for sharing"
+            >
+              <i className={`bi ${isSelected ? 'bi-check-circle-fill' : 'bi-circle'}`} />
+            </button>
+          )}
           {images.length > 0 ? (
             <>
               {/* Main clickable image */}
