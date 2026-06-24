@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ProductCard from '../components/ProductCard';
@@ -44,6 +45,16 @@ const Products = () => {
     const t = setTimeout(() => setFilters(f => ({ ...f, search: searchDraft })), 450);
     return () => clearTimeout(t);
   }, [searchDraft]);
+
+  // Lock body scroll while filter sidebar is open
+  useEffect(() => {
+    if (filtersOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [filtersOpen]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -127,89 +138,6 @@ const Products = () => {
             )}
           </div>
 
-          {/* Expandable filter panel */}
-          <div className={`filter-panel${filtersOpen ? ' open' : ''}`}>
-            {/* Category */}
-            <div className="filter-group">
-              <label className="filter-label">Category</label>
-              <div className="filter-chip-row">
-                {CATEGORY_OPTIONS.map(c => (
-                  <button
-                    key={c}
-                    className={`filter-chip${filters.category === c ? ' active' : ''}`}
-                    onClick={() => setFilter('category', c)}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Size */}
-            <div className="filter-group">
-              <label className="filter-label">Size</label>
-              <div className="filter-chip-row">
-                {SIZE_OPTIONS.map(s => (
-                  <button
-                    key={s}
-                    className={`filter-chip${filters.size === s ? ' active' : ''}`}
-                    onClick={() => setFilter('size', s)}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Price Range */}
-            <div className="filter-group">
-              <label className="filter-label">Price Range (₹)</label>
-              <div className="price-range-row">
-                <input
-                  id="min-price"
-                  type="number"
-                  className="price-input"
-                  placeholder="Min"
-                  min="0"
-                  value={filters.minPrice}
-                  onChange={e => setFilter('minPrice', e.target.value)}
-                />
-                <span className="price-sep">—</span>
-                <input
-                  id="max-price"
-                  type="number"
-                  className="price-input"
-                  placeholder="Max"
-                  min="0"
-                  value={filters.maxPrice}
-                  onChange={e => setFilter('maxPrice', e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Sort */}
-            <div className="filter-group">
-              <label className="filter-label">Sort By</label>
-              <select
-                id="sort-select"
-                className="sort-select"
-                value={filters.sort}
-                onChange={e => setFilter('sort', e.target.value)}
-              >
-                {SORT_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Clear */}
-            {isFiltered && (
-              <button className="clear-filters-btn" onClick={clearAll}>
-                <i className="bi bi-x-circle" /> Clear All Filters
-              </button>
-            )}
-          </div>
-
           {/* Results count */}
           <div className="results-row">
             <span className="item-count">
@@ -221,6 +149,123 @@ const Products = () => {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Slide-in filter sidebar overlay rendered via React Portal */}
+        {filtersOpen && createPortal(
+          <div
+            className="filter-sidebar-overlay"
+            role="dialog"
+            aria-modal="true"
+            onClick={e => { if (e.target === e.currentTarget) setFiltersOpen(false); }}
+          >
+            <div className="filter-sidebar">
+              <div className="filter-sidebar-header">
+                <div className="sidebar-title-row">
+                  <i className="bi bi-sliders sidebar-title-icon" />
+                  <h3>Refine Collection</h3>
+                </div>
+                <button
+                  className="filter-sidebar-close"
+                  onClick={() => setFiltersOpen(false)}
+                  aria-label="Close filters"
+                >
+                  <i className="bi bi-x-lg" />
+                </button>
+              </div>
+
+              <div className="filter-sidebar-body">
+                {/* Category */}
+                <div className="filter-group">
+                  <label className="filter-label">Category</label>
+                  <div className="filter-chip-row">
+                    {CATEGORY_OPTIONS.map(c => (
+                      <button
+                        key={c}
+                        className={`filter-chip${filters.category === c ? ' active' : ''}`}
+                        onClick={() => setFilter('category', c)}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Size */}
+                <div className="filter-group">
+                  <label className="filter-label">Size</label>
+                  <div className="filter-chip-row">
+                    {SIZE_OPTIONS.map(s => (
+                      <button
+                        key={s}
+                        className={`filter-chip${filters.size === s ? ' active' : ''}`}
+                        onClick={() => setFilter('size', s)}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div className="filter-group">
+                  <label className="filter-label">Price Range (₹)</label>
+                  <div className="price-range-row">
+                    <input
+                      id="min-price"
+                      type="number"
+                      className="price-input"
+                      placeholder="Min"
+                      min="0"
+                      value={filters.minPrice}
+                      onChange={e => setFilter('minPrice', e.target.value)}
+                    />
+                    <span className="price-sep">—</span>
+                    <input
+                      id="max-price"
+                      type="number"
+                      className="price-input"
+                      placeholder="Max"
+                      min="0"
+                      value={filters.maxPrice}
+                      onChange={e => setFilter('maxPrice', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Sort */}
+                <div className="filter-group">
+                  <label className="filter-label">Sort By</label>
+                  <select
+                    id="sort-select"
+                    className="sort-select"
+                    value={filters.sort}
+                    onChange={e => setFilter('sort', e.target.value)}
+                  >
+                    {SORT_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="filter-sidebar-footer">
+                <span className="sidebar-results-count">
+                  {loading ? '...' : `${products.length} item${products.length !== 1 ? 's' : ''} found`}
+                </span>
+                {isFiltered && (
+                  <button className="sidebar-clear-btn" onClick={clearAll}>
+                    <i className="bi bi-arrow-counterclockwise" /> Clear All
+                  </button>
+                )}
+                <button className="sidebar-apply-btn" onClick={() => setFiltersOpen(false)}>
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
         </div>
 
         {/* Grid */}
