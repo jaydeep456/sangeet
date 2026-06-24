@@ -7,8 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import { getProducts } from '../services/api';
 
-const SIZE_OPTIONS     = ['All', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
-const CATEGORY_OPTIONS = ['All', 'Ethnic', 'Bridal', 'Festive', 'Casual Ethnic', 'Wedding', 'Formal'];
+
 const SORT_OPTIONS     = [
   { value: 'newest',     label: 'Newest First' },
   { value: 'price_asc',  label: 'Price: Low → High' },
@@ -46,6 +45,55 @@ const Products = () => {
   const sharedIds = searchParams.get('shared');
   const isSharedView = !!sharedIds;
   const [selectedIds, setSelectedIds] = useState([]);
+
+  const [customCategories, setCustomCategories] = useState(() => {
+    const saved = localStorage.getItem('sangeet_custom_categories');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [customSizes, setCustomSizes] = useState(() => {
+    const saved = localStorage.getItem('sangeet_custom_sizes');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Dynamic categories: unique from products + custom added ones
+  const categoryOptions = React.useMemo(() => {
+    const fromProducts = products.map(p => p.category).filter(Boolean);
+    const unique = Array.from(new Set([...fromProducts, ...customCategories]));
+    return ['All', ...unique];
+  }, [products, customCategories]);
+
+  // Dynamic sizes: unique from products + custom added ones
+  const sizeOptions = React.useMemo(() => {
+    const fromProducts = products.map(p => p.size).filter(Boolean);
+    const unique = Array.from(new Set([...fromProducts, ...customSizes]));
+    return ['All', ...unique];
+  }, [products, customSizes]);
+
+  const handleAddCategory = () => {
+    const name = prompt('Enter new category name:');
+    if (name && name.trim()) {
+      const clean = name.trim();
+      if (!customCategories.includes(clean)) {
+        const updated = [...customCategories, clean];
+        setCustomCategories(updated);
+        localStorage.setItem('sangeet_custom_categories', JSON.stringify(updated));
+        toast.success(`Category "${clean}" added to filters`);
+      }
+    }
+  };
+
+  const handleAddSize = () => {
+    const name = prompt('Enter new size (e.g. M, 32, XXL):');
+    if (name && name.trim()) {
+      const clean = name.trim();
+      if (!customSizes.includes(clean)) {
+        const updated = [...customSizes, clean];
+        setCustomSizes(updated);
+        localStorage.setItem('sangeet_custom_sizes', JSON.stringify(updated));
+        toast.success(`Size "${clean}" added to filters`);
+      }
+    }
+  };
 
   // Debounce search text
   useEffect(() => {
@@ -266,9 +314,31 @@ const Products = () => {
             <div className="filter-sidebar-body">
               {/* Category */}
               <div className="filter-group">
-                <label className="filter-label">Category</label>
+                <div className="filter-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="filter-label" style={{ margin: 0 }}>Category</label>
+                  <button
+                    onClick={handleAddCategory}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--gold)',
+                      fontSize: '0.72rem',
+                      fontFamily: 'var(--font-display)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer',
+                      padding: 0,
+                      opacity: 0.85
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                    onMouseLeave={e => e.currentTarget.style.opacity = 0.85}
+                  >
+                    <i className="bi bi-plus-circle" /> Add Category
+                  </button>
+                </div>
                 <div className="filter-chip-row">
-                  {CATEGORY_OPTIONS.map(c => (
+                  {categoryOptions.map(c => (
                     <button
                       key={c}
                       className={`filter-chip${filters.category === c ? ' active' : ''}`}
@@ -282,9 +352,31 @@ const Products = () => {
 
               {/* Size */}
               <div className="filter-group">
-                <label className="filter-label">Size</label>
+                <div className="filter-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="filter-label" style={{ margin: 0 }}>Size</label>
+                  <button
+                    onClick={handleAddSize}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--gold)',
+                      fontSize: '0.72rem',
+                      fontFamily: 'var(--font-display)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer',
+                      padding: 0,
+                      opacity: 0.85
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                    onMouseLeave={e => e.currentTarget.style.opacity = 0.85}
+                  >
+                    <i className="bi bi-plus-circle" /> Add Sizes
+                  </button>
+                </div>
                 <div className="filter-chip-row">
-                  {SIZE_OPTIONS.map(s => (
+                  {sizeOptions.map(s => (
                     <button
                       key={s}
                       className={`filter-chip${filters.size === s ? ' active' : ''}`}
