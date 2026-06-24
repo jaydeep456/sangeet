@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
   : '/api';
 
-const api = axios.create({ baseURL: BASE_URL, timeout: 15000 });
+const api = axios.create({ baseURL: BASE_URL, timeout: 20000 });
 
 // Attach JWT token to every request if available
 api.interceptors.request.use(
@@ -29,14 +29,26 @@ api.interceptors.response.use(
 export const login  = (username, password) => api.post('/auth/login', { username, password });
 export const signup = (username, password) => api.post('/auth/signup', { username, password });
 
-export const getProducts   = (search = '', size = '') =>
-  api.get('/products', { params: { ...(search && { search }), ...(size && size !== 'All' && { size }) } });
+// Products — enhanced filters: search, size, category, minPrice, maxPrice, sort
+export const getProducts = ({ search = '', size = '', category = '', minPrice = '', maxPrice = '', sort = 'newest' } = {}) =>
+  api.get('/products', {
+    params: {
+      ...(search                            && { search }),
+      ...(size     && size     !== 'All'    && { size }),
+      ...(category && category !== 'All'    && { category }),
+      ...(minPrice !== ''                   && { minPrice }),
+      ...(maxPrice !== ''                   && { maxPrice }),
+      ...(sort     && sort     !== 'newest' && { sort }),
+    },
+  });
 
 export const getProductById = id => api.get(`/products/${id}`);
 
+// Create — images is a FileList or File[]
 export const createProduct = formData =>
   api.post('/products', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
+// Update — formData may include removeImages JSON + new image files
 export const updateProduct = (id, formData) =>
   api.put(`/products/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 

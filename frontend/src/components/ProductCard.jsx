@@ -2,16 +2,25 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { deleteProduct } from '../services/api';
+import ImageLightbox from './ImageLightbox';
 
 const ProductCard = ({ product, onDeleted }) => {
-  const [showModal, setShowModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [imgErr, setImgErr] = useState(false);
+  const [showModal, setShowModal]     = useState(false);
+  const [deleting, setDeleting]       = useState(false);
+  const [activeImg, setActiveImg]     = useState(0);
+  const [lightboxIdx, setLightboxIdx] = useState(null); // null = closed
 
   // Read auth state
   const userJson = localStorage.getItem('sangeet_user');
-  const user = userJson ? JSON.parse(userJson) : null;
-  const isAdmin = user && user.role === 'admin';
+  const user     = userJson ? JSON.parse(userJson) : null;
+  const isAdmin  = user && user.role === 'admin';
+
+  // Normalise to images array
+  const images = product.images && product.images.length > 0
+    ? product.images
+    : product.image
+      ? [{ url: product.image, publicId: product.cloudinaryPublicId || '' }]
+      : [];
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -27,30 +36,59 @@ const ProductCard = ({ product, onDeleted }) => {
     }
   };
 
-  const fmt = (p) =>
+  const fmt = p =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(p);
 
   return (
     <>
       <div className="product-card page-enter">
-        {/* Image */}
+        {/* ── Image Gallery ── */}
         <div className="product-img-wrap">
-          {product.image && !imgErr ? (
-            <img
-              className="product-img"
-              src={product.image}
-              alt={product.name}
-              loading="lazy"
-              onError={() => setImgErr(true)}
-            />
+          {images.length > 0 ? (
+            <>
+              {/* Main clickable image */}
+              <img
+                className="product-img"
+                src={images[activeImg]?.url || images[0]?.url}
+                alt={product.name}
+                loading="lazy"
+                onClick={() => setLightboxIdx(activeImg)}
+                title="Click to view full size"
+              />
+              {/* Image count badge */}
+              {images.length > 1 && (
+                <span className="img-count-badge">
+                  <i className="bi bi-images" /> {images.length}
+                </span>
+              )}
+              {/* Zoom hint overlay */}
+              <div className="img-zoom-hint" onClick={() => setLightboxIdx(activeImg)}>
+                <i className="bi bi-zoom-in" />
+              </div>
+            </>
           ) : (
-            <div className="product-img-placeholder">
+            <div className="product-img-placeholder" onClick={() => {}}>
               <span className="ph-icon">🪷</span>
               <span className="ph-text">No Image</span>
             </div>
           )}
           <span className="cat-badge">{product.category || 'Ethnic'}</span>
         </div>
+
+        {/* Thumbnail strip (only if >1 image) */}
+        {images.length > 1 && (
+          <div className="card-thumb-strip">
+            {images.map((img, i) => (
+              <img
+                key={i}
+                src={img.url}
+                alt={`View ${i + 1}`}
+                className={`card-thumb${i === activeImg ? ' active' : ''}`}
+                onClick={() => setActiveImg(i)}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Body */}
         <div className="product-body">
@@ -64,7 +102,7 @@ const ProductCard = ({ product, onDeleted }) => {
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Admin Actions */}
         {isAdmin && (
           <div className="product-actions">
             <Link
@@ -116,6 +154,15 @@ const ProductCard = ({ product, onDeleted }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxIdx !== null && images.length > 0 && (
+        <ImageLightbox
+          images={images}
+          startIdx={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+        />
       )}
     </>
   );

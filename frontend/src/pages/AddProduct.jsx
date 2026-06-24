@@ -1,44 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { createProduct } from '../services/api';
 
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
-const CATS  = ['Ethnic', 'Bridal', 'Festive', 'Casual Ethnic', 'Wedding', 'Formal'];
+const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size', 'Custom...'];
+const CATS         = ['Ethnic', 'Bridal', 'Festive', 'Casual Ethnic', 'Wedding', 'Formal'];
+const MAX_IMAGES   = 10;
 
 const AddProduct = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', price: '', size: '', description: '', category: 'Ethnic' });
-  const [imgFile, setImgFile] = useState(null);
-  const [imgPreview, setImgPreview] = useState('');
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
 
+  const [form, setForm] = useState({
+    name:        '',
+    price:       '',
+    sizePreset:  '',    // selected preset button value
+    sizeCustom:  '',    // custom text when "Custom..." is chosen
+    description: '',
+    category:    'Ethnic',
+  });
+  const [imgFiles,    setImgFiles]    = useState([]);   // File[]
+  const [imgPreviews, setImgPreviews] = useState([]);   // object-URL[]
+  const [errors,      setErrors]      = useState({});
+  const [submitting,  setSubmitting]  = useState(false);
+  const [dragOver,    setDragOver]    = useState(false);
+
+  const isCustomSize = form.sizePreset === 'Custom...';
+  const effectiveSize = isCustomSize ? form.sizeCustom : form.sizePreset;
+
+  // ── Validation ─────────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
-    if (!form.name.trim() || form.name.trim().length < 3) e.name = 'Name must be at least 3 characters';
-    if (!form.price || isNaN(form.price) || Number(form.price) <= 0) e.price = 'Enter a valid positive price';
-    if (!form.size) e.size = 'Please select a size';
+    if (!form.name.trim() || form.name.trim().length < 3)
+      e.name = 'Name must be at least 3 characters';
+    if (!form.price || isNaN(form.price) || Number(form.price) <= 0)
+      e.price = 'Enter a valid positive price';
+    if (!effectiveSize || !effectiveSize.trim())
+      e.size = 'Please choose or enter a size';
     return e;
   };
 
+  // ── Form field change ──────────────────────────────────────────────────
   const onChange = e => {
     const { name, value } = e.target;
     setForm(p => ({ ...p, [name]: value }));
     if (errors[name]) setErrors(p => ({ ...p, [name]: '' }));
   };
 
-  const handleImg = file => {
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be < 5MB'); return; }
-    setImgFile(file);
-    setImgPreview(URL.createObjectURL(file));
+  // ── Size preset click ──────────────────────────────────────────────────
+  const onSizeClick = val => {
+    setForm(p => ({ ...p, sizePreset: val, sizeCustom: '' }));
+    if (errors.size) setErrors(p => ({ ...p, size: '' }));
   };
 
-  const onDrop = e => { e.preventDefault(); setDragOver(false); handleImg(e.dataTransfer.files?.[0]); };
+  // ── Image handling ─────────────────────────────────────────────────────
+  const addImages = files => {
+    const arr = Array.from(files).filter(f => {
+      if (!f.type.startsWith('image/')) { toast.error(`${f.name}: not an image`); return false; }
+      if (f.size > 5 * 1024 * 1024)    { toast.error(`${f.name}: exceeds 5MB`);  return false; }
+      return true;
+    });
+    if (imgFiles.length + arr.length > MAX_IMAGES) {
+      toast.error(`Max ${MAX_IMAGES} images allowed`);
+      return;
+    }
+    const newFiles    = [...imgFiles,    ...arr];
+    const newPreviews = [...imgPreviews, ...arr.map(f => URL.createObjectURL(f))];
+    setImgFiles(newFiles);
+    setImgPreviews(newPreviews);
+  };
 
+  const removeImage = idx => {
+    URL.revokeObjectURL(imgPreviews[idx]);
+    setImgFiles(p    => p.filter((_, i) => i !== idx));
+    setImgPreviews(p => p.filter((_, i) => i !== idx));
+  };
+
+  const onDrop = e => {
+    e.preventDefault();
+    setDragOver(false);
+    addImages(e.dataTransfer.files);
+  };
+
+  // ── Submit ─────────────────────────────────────────────────────────────
   const onSubmit = async e => {
     e.preventDefault();
     const errs = validate();
@@ -47,12 +91,13 @@ const AddProduct = () => {
     setSubmitting(true);
     try {
       const fd = new FormData();
-      fd.append('name', form.name.trim());
-      fd.append('price', form.price);
-      fd.append('size', form.size);
+      fd.append('name',        form.name.trim());
+      fd.append('price',       form.price);
+      fd.append('size',        effectiveSize.trim());
       fd.append('description', form.description.trim());
-      fd.append('category', form.category);
-      if (imgFile) fd.append('image', imgFile);
+      fd.append('category',    form.category);
+      imgFiles.forEach(f => fd.append('images', f));
+
       await createProduct(fd);
       toast.success('Product added to collection ✨');
       navigate('/products');
@@ -79,7 +124,7 @@ const AddProduct = () => {
           <div className="admin-card-body">
             <form id="add-product-form" onSubmit={onSubmit} noValidate>
 
-              {/* Name */}
+              {/* ── Name ── */}
               <div className="f-group">
                 <label className="f-label" htmlFor="p-name">Product Name *</label>
                 <input id="p-name" className="f-input" type="text" name="name"
@@ -88,7 +133,7 @@ const AddProduct = () => {
                 {errors.name && <p className="f-error"><i className="bi bi-exclamation-circle" /> {errors.name}</p>}
               </div>
 
-              {/* Price + Size */}
+              {/* ── Price + Category ── */}
               <div className="row g-3">
                 <div className="col-sm-6">
                   <div className="f-group">
@@ -100,65 +145,108 @@ const AddProduct = () => {
                 </div>
                 <div className="col-sm-6">
                   <div className="f-group">
-                    <label className="f-label" htmlFor="p-size">Size *</label>
-                    <select id="p-size" className="f-select" name="size" value={form.size} onChange={onChange}>
-                      <option value="">Select size</option>
-                      {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+                    <label className="f-label" htmlFor="p-cat">Category</label>
+                    <select id="p-cat" className="f-select" name="category" value={form.category} onChange={onChange}>
+                      {CATS.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
-                    {errors.size && <p className="f-error"><i className="bi bi-exclamation-circle" /> {errors.size}</p>}
                   </div>
                 </div>
               </div>
 
-              {/* Category */}
+              {/* ── Size picker ── */}
               <div className="f-group">
-                <label className="f-label" htmlFor="p-cat">Category</label>
-                <select id="p-cat" className="f-select" name="category" value={form.category} onChange={onChange}>
-                  {CATS.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <label className="f-label">Size *</label>
+                <div className="size-chip-row">
+                  {PRESET_SIZES.map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`size-chip${form.sizePreset === s ? ' active' : ''}`}
+                      onClick={() => onSizeClick(s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                {isCustomSize && (
+                  <input
+                    id="p-size-custom"
+                    className="f-input mt-2"
+                    type="text"
+                    name="sizeCustom"
+                    value={form.sizeCustom}
+                    onChange={onChange}
+                    placeholder="e.g. 38, 40-42, One size fits all, Bust 36..."
+                    maxLength={50}
+                    autoFocus
+                  />
+                )}
+                {errors.size && <p className="f-error"><i className="bi bi-exclamation-circle" /> {errors.size}</p>}
+                {effectiveSize && !errors.size && (
+                  <p className="f-hint">Selected: <strong>{effectiveSize}</strong></p>
+                )}
               </div>
 
-              {/* Description */}
+              {/* ── Description ── */}
               <div className="f-group">
                 <label className="f-label" htmlFor="p-desc">Description</label>
                 <textarea id="p-desc" className="f-textarea" name="description"
                   value={form.description} onChange={onChange}
-                  placeholder="Describe this piece — fabric, occasion, style..." maxLength={500} />
-                <p className="f-hint">{form.description.length}/500</p>
+                  placeholder="Describe this piece — fabric, occasion, style..." maxLength={1000} />
+                <p className="f-hint">{form.description.length}/1000</p>
               </div>
 
-              {/* Image Upload */}
+              {/* ── Multi Image Upload ── */}
               <div className="f-group">
-                <label className="f-label">Product Image</label>
-                {imgPreview ? (
-                  <div className="text-center">
-                    <div className="preview-wrap">
-                      <img src={imgPreview} alt="Preview" className="preview-img" />
-                      <button type="button" className="preview-remove" id="remove-img"
-                        onClick={() => { setImgFile(null); setImgPreview(''); }}>
-                        <i className="bi bi-x" />
-                      </button>
-                    </div>
-                    <p className="f-hint" style={{ marginTop: '8px' }}>{imgFile?.name}</p>
-                  </div>
-                ) : (
-                  <div
-                    id="upload-zone"
-                    className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
-                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                    onDragLeave={() => setDragOver(false)}
-                    onDrop={onDrop}
-                    onClick={() => document.getElementById('file-input').click()}
-                    role="button" tabIndex={0}
-                    onKeyPress={e => e.key === 'Enter' && document.getElementById('file-input').click()}
-                  >
-                    <div className="upload-icon">📸</div>
-                    <p className="upload-title"><strong>Click to upload</strong> or drag & drop</p>
-                    <p className="upload-hint">PNG, JPG, WEBP — max 5MB</p>
+                <label className="f-label">
+                  Product Images
+                  <span className="f-hint-inline"> — up to {MAX_IMAGES} photos (different views, colours)</span>
+                </label>
+
+                {/* Drop zone */}
+                <div
+                  id="upload-zone"
+                  className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={onDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  role="button" tabIndex={0}
+                  onKeyPress={e => e.key === 'Enter' && fileInputRef.current?.click()}
+                >
+                  <div className="upload-icon">📸</div>
+                  <p className="upload-title"><strong>Click to upload</strong> or drag &amp; drop</p>
+                  <p className="upload-hint">PNG, JPG, WEBP — max 5MB each · {imgFiles.length}/{MAX_IMAGES} selected</p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  id="file-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={e => addImages(e.target.files)}
+                />
+
+                {/* Preview grid */}
+                {imgPreviews.length > 0 && (
+                  <div className="img-preview-grid">
+                    {imgPreviews.map((url, i) => (
+                      <div key={i} className="preview-thumb-wrap">
+                        <img src={url} alt={`Preview ${i + 1}`} className="preview-thumb" />
+                        {i === 0 && <span className="thumb-primary-badge">Primary</span>}
+                        <button
+                          type="button"
+                          className="preview-remove"
+                          onClick={() => removeImage(i)}
+                          aria-label="Remove image"
+                        >
+                          <i className="bi bi-x" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
-                <input id="file-input" type="file" accept="image/*" style={{ display: 'none' }}
-                  onChange={e => handleImg(e.target.files?.[0])} />
               </div>
 
               <button id="submit-add" type="submit" className="btn-submit" disabled={submitting}>
