@@ -206,9 +206,78 @@ const Products = () => {
     toast.success('Link copied to clipboard!');
   };
 
-  const handleWhatsAppShare = () => {
-    const text = encodeURIComponent(`Hey! I selected some exclusive designs for you. Check them out here:\n\n${getShareLink()}`);
-    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  const handleWhatsAppShare = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('No products selected to share.');
+      return;
+    }
+
+    const selectedProducts = products.filter(p => selectedIds.includes(p._id));
+    
+    let text = "✨ *Selected SANGEET Designs* ✨\n\n";
+    selectedProducts.forEach((p, idx) => {
+      text += `*${idx + 1}. ${p.name}*\n`;
+      text += `• Category: ${p.category}\n`;
+      if (p.sizes && p.sizes.length > 0) text += `• Sizes: ${p.sizes.join(', ')}\n`;
+      text += `\n`;
+    });
+
+    const toastId = toast.loading('Preparing images for sharing...');
+
+    try {
+      let files = [];
+      
+      if (navigator.share && navigator.canShare) {
+        const fetchPromises = selectedProducts.map(async p => {
+          if (p.images && p.images.length > 0) {
+            try {
+              const res = await fetch(p.images[0].url, { mode: 'cors' });
+              const blob = await res.blob();
+              let ext = 'jpg';
+              if (blob.type === 'image/png') ext = 'png';
+              else if (blob.type === 'image/webp') ext = 'webp';
+              return new File([blob], `${p.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${ext}`, { type: blob.type });
+            } catch (err) {
+              console.error('Fetch error:', err);
+              return null;
+            }
+          }
+          return null;
+        });
+        
+        const results = await Promise.all(fetchPromises);
+        files = results.filter(f => f !== null);
+      }
+
+      const shareData = {
+        title: 'Sangeet Designs',
+        text: text,
+      };
+
+      if (files.length > 0) {
+        shareData.files = files;
+      }
+
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        toast.dismiss(toastId);
+        await navigator.share(shareData);
+      } else {
+        toast.dismiss(toastId);
+        toast.success('Information ready! Redirecting...');
+        navigator.clipboard.writeText(text);
+        
+        setTimeout(() => {
+          const encodedText = encodeURIComponent(text);
+          window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
+        }, 1000);
+      }
+    } catch (err) {
+      toast.dismiss(toastId);
+      console.error("Share failed:", err);
+      if (err.name !== 'AbortError') {
+        toast.error("Share action cancelled or failed.");
+      }
+    }
   };
 
   const isFiltered = Object.keys(defaultFilters).some(k =>
