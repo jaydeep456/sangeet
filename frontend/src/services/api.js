@@ -29,8 +29,8 @@ api.interceptors.response.use(
 export const login  = (username, password) => api.post('/auth/login', { username, password });
 export const signup = (username, password) => api.post('/auth/signup', { username, password });
 
-// Products — enhanced filters: search, size, category, minPrice, maxPrice, sort
-export const getProducts = ({ search = '', size = '', category = '', minPrice = '', maxPrice = '', sort = 'newest' } = {}) =>
+// Products — enhanced filters: search, size, category, minPrice, maxPrice, sort, ids
+export const getProducts = ({ search = '', size = '', category = '', minPrice = '', maxPrice = '', sort = 'newest', ids = '' } = {}) =>
   api.get('/products', {
     params: {
       ...(search                            && { search }),
@@ -39,6 +39,7 @@ export const getProducts = ({ search = '', size = '', category = '', minPrice = 
       ...(minPrice !== ''                   && { minPrice }),
       ...(maxPrice !== ''                   && { maxPrice }),
       ...(sort     && sort     !== 'newest' && { sort }),
+      ...(ids                               && { ids }),
     },
   });
 
