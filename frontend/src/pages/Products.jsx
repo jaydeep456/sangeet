@@ -48,31 +48,49 @@ const Products = () => {
 
   const [customCategories, setCustomCategories] = useState(() => {
     const saved = localStorage.getItem('sangeet_custom_categories');
-    return saved ? JSON.parse(saved) : [];
+    const defaults = ['Ethnic', 'Bridal', 'Festive', 'Casual Ethnic', 'Wedding', 'Formal'];
+    return saved ? JSON.parse(saved) : defaults;
   });
   const [customSizes, setCustomSizes] = useState(() => {
     const saved = localStorage.getItem('sangeet_custom_sizes');
+    const defaults = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
+    return saved ? JSON.parse(saved) : defaults;
+  });
+
+  const [removedCategories, setRemovedCategories] = useState(() => {
+    const saved = localStorage.getItem('sangeet_removed_categories');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [removedSizes, setRemovedSizes] = useState(() => {
+    const saved = localStorage.getItem('sangeet_removed_sizes');
     return saved ? JSON.parse(saved) : [];
   });
 
   // Dynamic categories: unique from products + custom added ones
   const categoryOptions = React.useMemo(() => {
     const fromProducts = products.map(p => p.category).filter(Boolean);
-    const unique = Array.from(new Set([...fromProducts, ...customCategories]));
-    return ['All', ...unique];
-  }, [products, customCategories]);
+    const unique = Array.from(new Set([...customCategories, ...fromProducts]));
+    const active = unique.filter(c => !removedCategories.includes(c));
+    return ['All', ...active];
+  }, [products, customCategories, removedCategories]);
 
   // Dynamic sizes: unique from products + custom added ones
   const sizeOptions = React.useMemo(() => {
     const fromProducts = products.map(p => p.size).filter(Boolean);
-    const unique = Array.from(new Set([...fromProducts, ...customSizes]));
-    return ['All', ...unique];
-  }, [products, customSizes]);
+    const unique = Array.from(new Set([...customSizes, ...fromProducts]));
+    const active = unique.filter(s => !removedSizes.includes(s));
+    return ['All', ...active];
+  }, [products, customSizes, removedSizes]);
 
   const handleAddCategory = () => {
     const name = prompt('Enter new category name:');
     if (name && name.trim()) {
       const clean = name.trim();
+      if (removedCategories.includes(clean)) {
+        const updatedRemoved = removedCategories.filter(c => c !== clean);
+        setRemovedCategories(updatedRemoved);
+        localStorage.setItem('sangeet_removed_categories', JSON.stringify(updatedRemoved));
+      }
       if (!customCategories.includes(clean)) {
         const updated = [...customCategories, clean];
         setCustomCategories(updated);
@@ -86,6 +104,11 @@ const Products = () => {
     const name = prompt('Enter new size (e.g. M, 32, XXL):');
     if (name && name.trim()) {
       const clean = name.trim();
+      if (removedSizes.includes(clean)) {
+        const updatedRemoved = removedSizes.filter(s => s !== clean);
+        setRemovedSizes(updatedRemoved);
+        localStorage.setItem('sangeet_removed_sizes', JSON.stringify(updatedRemoved));
+      }
       if (!customSizes.includes(clean)) {
         const updated = [...customSizes, clean];
         setCustomSizes(updated);
@@ -93,6 +116,38 @@ const Products = () => {
         toast.success(`Size "${clean}" added to filters`);
       }
     }
+  };
+
+  const handleRemoveCategory = (e, cat) => {
+    e.stopPropagation();
+    const updatedRemoved = [...removedCategories, cat];
+    setRemovedCategories(updatedRemoved);
+    localStorage.setItem('sangeet_removed_categories', JSON.stringify(updatedRemoved));
+    
+    const updatedCustom = customCategories.filter(c => c !== cat);
+    setCustomCategories(updatedCustom);
+    localStorage.setItem('sangeet_custom_categories', JSON.stringify(updatedCustom));
+    
+    if (filters.category === cat) {
+      setFilter('category', 'All');
+    }
+    toast.success(`Category "${cat}" removed`);
+  };
+
+  const handleRemoveSize = (e, sz) => {
+    e.stopPropagation();
+    const updatedRemoved = [...removedSizes, sz];
+    setRemovedSizes(updatedRemoved);
+    localStorage.setItem('sangeet_removed_sizes', JSON.stringify(updatedRemoved));
+    
+    const updatedCustom = customSizes.filter(s => s !== sz);
+    setCustomSizes(updatedCustom);
+    localStorage.setItem('sangeet_custom_sizes', JSON.stringify(updatedCustom));
+    
+    if (filters.size === sz) {
+      setFilter('size', 'All');
+    }
+    toast.success(`Size "${sz}" removed`);
   };
 
   // Debounce search text
@@ -343,8 +398,34 @@ const Products = () => {
                       key={c}
                       className={`filter-chip${filters.category === c ? ' active' : ''}`}
                       onClick={() => setFilter('category', c)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     >
-                      {c}
+                      <span>{c}</span>
+                      {c !== 'All' && (
+                        <span
+                          onClick={(e) => handleRemoveCategory(e, c)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: 'rgba(0,0,0,0.15)',
+                            fontSize: '0.55rem',
+                            color: 'inherit',
+                            marginLeft: '2px',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s',
+                            lineHeight: 1
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,53,69,0.35)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.15)'}
+                          title={`Remove "${c}"`}
+                        >
+                          ✕
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -381,8 +462,34 @@ const Products = () => {
                       key={s}
                       className={`filter-chip${filters.size === s ? ' active' : ''}`}
                       onClick={() => setFilter('size', s)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     >
-                      {s}
+                      <span>{s}</span>
+                      {s !== 'All' && (
+                        <span
+                          onClick={(e) => handleRemoveSize(e, s)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: 'rgba(0,0,0,0.15)',
+                            fontSize: '0.55rem',
+                            color: 'inherit',
+                            marginLeft: '2px',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s',
+                            lineHeight: 1
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,53,69,0.35)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.15)'}
+                          title={`Remove "${s}"`}
+                        >
+                          ✕
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
