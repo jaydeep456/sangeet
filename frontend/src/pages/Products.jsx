@@ -206,6 +206,94 @@ const Products = () => {
     toast.success('Link copied to clipboard!');
   };
 
+  const generateProductShareImage = async (product) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          const width = img.width;
+          const height = img.height;
+          
+          const padding = Math.max(30, Math.floor(width * 0.04));
+          const titleSize = Math.max(28, Math.floor(width * 0.045));
+          const bodySize = Math.max(22, Math.floor(width * 0.035));
+          const lineHeight = 1.4;
+          
+          const title = product.name || 'SANGEET Design';
+          const cat = `Category: ${product.category || 'N/A'}`;
+          const sizes = product.sizes?.length ? `Sizes: ${product.sizes.join(', ')}` : '';
+          const price = product.price ? `Price: ₹${product.price}` : '';
+          
+          const lines = [title, cat];
+          if (sizes) lines.push(sizes);
+          if (price) lines.push(price);
+
+          const bannerHeight = padding * 2 + titleSize + (lines.length - 1) * (bodySize * lineHeight);
+
+          canvas.width = width;
+          canvas.height = height + bannerHeight;
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          ctx.drawImage(img, 0, 0, width, height);
+
+          ctx.fillStyle = '#c9a84c';
+          ctx.fillRect(0, height, width, 6);
+
+          let currentY = height + padding + titleSize;
+
+          ctx.fillStyle = '#060e09';
+          ctx.font = `bold ${titleSize}px sans-serif`;
+          ctx.fillText(title, padding, currentY);
+
+          for(let i = 1; i < lines.length; i++) {
+            currentY += bodySize * lineHeight;
+            if (lines[i].startsWith('Price:')) {
+              ctx.fillStyle = '#c9a84c';
+              ctx.font = `bold ${bodySize}px sans-serif`;
+            } else {
+              ctx.fillStyle = '#444444';
+              ctx.font = `${bodySize}px sans-serif`;
+            }
+            ctx.fillText(lines[i], padding, currentY);
+          }
+
+          ctx.fillStyle = '#aaaaaa';
+          ctx.font = `italic ${Math.floor(bodySize * 0.8)}px sans-serif`;
+          ctx.textAlign = 'right';
+          ctx.fillText('SANGEET - Tune of Trends', width - padding, height + bannerHeight - padding);
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const safeName = (product.name || 'design').replace(/[^a-z0-9]/gi, '_').substring(0, 30);
+              const file = new File([blob], `${safeName}.jpg`, { type: 'image/jpeg' });
+              resolve(file);
+            } else {
+              reject(new Error('Blob failed'));
+            }
+          }, 'image/jpeg', 0.95);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      
+      img.onerror = () => reject(new Error('Image load failed'));
+      
+      if (product.images && product.images.length > 0) {
+        const url = product.images[0].url;
+        img.src = url + (url.includes('?') ? '&' : '?') + 'cors=1';
+      } else {
+        reject(new Error('No image'));
+      }
+    });
+  };
+
   const handleWhatsAppShare = async () => {
     if (selectedIds.length === 0) {
       toast.error('No products selected to share.');
@@ -213,62 +301,39 @@ const Products = () => {
     }
 
     const selectedProducts = products.filter(p => selectedIds.includes(p._id));
-    
-    let text = "✨ *SANGEET Selected Designs* ✨\n\n";
-    selectedProducts.forEach((p, idx) => {
-      text += `*Image ${idx + 1}: ${p.name}*\n`;
-      if (p.category) text += `• Category: ${p.category}\n`;
-      if (p.sizes && p.sizes.length > 0) text += `• Sizes: ${p.sizes.join(', ')}\n`;
-      text += `\n`;
-    });
-
-    const toastId = toast.loading('Preparing images for sharing...');
+    const toastId = toast.loading('Generating branded images with details...', { duration: 10000 });
 
     try {
-      let files = [];
-      
-      const fetchPromises = selectedProducts.map(async (p, idx) => {
-        if (p.images && p.images.length > 0) {
-          try {
-            const res = await fetch(p.images[0].url, { mode: 'cors' });
-            const blob = await res.blob();
-            let ext = 'jpg';
-            if (blob.type === 'image/png') ext = 'png';
-            else if (blob.type === 'image/webp') ext = 'webp';
-            
-            const safeName = p.name.replace(/[^a-z0-9]/gi, '_').substring(0, 30);
-            return new File([blob], `Image_${idx + 1}_${safeName}.${ext}`, { type: blob.type });
-          } catch (err) {
-            console.error('Fetch error:', err);
-            return null;
-          }
-        }
+      const filePromises = selectedProducts.map(p => generateProductShareImage(p).catch(e => {
+        console.error('Failed to generate image for', p.name, e);
         return null;
-      });
+      }));
       
-      const results = await Promise.all(fetchPromises);
-      files = results.filter(f => f !== null);
+      const generatedFiles = await Promise.all(filePromises);
+      const validFiles = generatedFiles.filter(f => f !== null);
+
+      if (validFiles.length === 0) {
+        toast.dismiss(toastId);
+        toast.error('Failed to generate shareable images. Please check your connection.');
+        return;
+      }
+
+      const text = "✨ Check out these exclusive SANGEET designs! ✨\n\n(Product details are attached directly to the images)";
 
       const shareData = {
         title: 'Sangeet Designs',
         text: text,
+        files: validFiles
       };
-
-      if (files.length > 0) {
-        shareData.files = files;
-      }
 
       if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
         toast.dismiss(toastId);
         await navigator.share(shareData);
       } else {
-        // Fallback for older devices / desktops
         toast.dismiss(toastId);
-        toast.success('Information copied! Downloading images to attach manually...', { duration: 4000 });
-        navigator.clipboard.writeText(text);
+        toast.success('Images generated! Downloading them for you to share...', { duration: 4000 });
         
-        // Trigger downloads for the images staggered to prevent browser blocking
-        files.forEach((f, i) => {
+        validFiles.forEach((f, i) => {
           setTimeout(() => {
             const url = URL.createObjectURL(f);
             const a = document.createElement('a');
@@ -278,11 +343,11 @@ const Products = () => {
             a.click();
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 1000);
-          }, i * 300); 
+          }, i * 400); 
         });
         
         setTimeout(() => {
-          const encodedText = encodeURIComponent(text + "\n*(Please attach the downloaded images)*");
+          const encodedText = encodeURIComponent(text + "\n*(Please attach the downloaded branded images)*");
           window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
         }, 1500);
       }
