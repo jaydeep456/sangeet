@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
-import { getProducts } from '../services/api';
+import { getProducts, createGroup } from '../services/api';
 
 
 const SORT_OPTIONS     = [
@@ -206,108 +206,93 @@ const Products = () => {
     toast.success('Link copied to clipboard!');
   };
 
-  const generateProductShareImage = async (product) => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+      const filePromises = [];
+      selectedProducts.forEach((p, pIdx) => {
+        if (p.images && p.images.length > 0) {
+          p.images.forEach((imgObj, imgIdx) => {
+            // Re-use generateProductShareImage with different image URLs
+            const promise = new Promise((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = 'Anonymous';
+              img.onload = () => {
+                try {
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+                  const width = img.width;
+                  const height = img.height;
+                  
+                  const padding = Math.max(30, Math.floor(width * 0.04));
+                  const titleSize = Math.max(28, Math.floor(width * 0.045));
+                  const bodySize = Math.max(22, Math.floor(width * 0.035));
+                  const lineHeight = 1.4;
+                  
+                  const title = p.name || 'SANGEET Design';
+                  const cat = `Category: ${p.category || 'N/A'}`;
+                  const sizes = p.sizes?.length ? `Sizes: ${p.sizes.join(', ')}` : '';
+                  const price = p.price ? `Price: ₹${p.price}` : '';
+                  
+                  const lines = [title, cat];
+                  if (sizes) lines.push(sizes);
+                  if (price) lines.push(price);
 
-          const width = img.width;
-          const height = img.height;
-          
-          const padding = Math.max(30, Math.floor(width * 0.04));
-          const titleSize = Math.max(28, Math.floor(width * 0.045));
-          const bodySize = Math.max(22, Math.floor(width * 0.035));
-          const lineHeight = 1.4;
-          
-          const title = product.name || 'SANGEET Design';
-          const cat = `Category: ${product.category || 'N/A'}`;
-          const sizes = product.sizes?.length ? `Sizes: ${product.sizes.join(', ')}` : '';
-          const price = product.price ? `Price: ₹${product.price}` : '';
-          
-          const lines = [title, cat];
-          if (sizes) lines.push(sizes);
-          if (price) lines.push(price);
+                  const bannerHeight = padding * 2 + titleSize + (lines.length - 1) * (bodySize * lineHeight);
+                  canvas.width = width;
+                  canvas.height = height + bannerHeight;
 
-          const bannerHeight = padding * 2 + titleSize + (lines.length - 1) * (bodySize * lineHeight);
+                  ctx.fillStyle = '#ffffff';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  ctx.drawImage(img, 0, 0, width, height);
 
-          canvas.width = width;
-          canvas.height = height + bannerHeight;
+                  ctx.fillStyle = '#c9a84c';
+                  ctx.fillRect(0, height, width, 6);
 
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          
-          ctx.drawImage(img, 0, 0, width, height);
+                  let currentY = height + padding + titleSize;
+                  ctx.fillStyle = '#060e09';
+                  ctx.font = `bold ${titleSize}px sans-serif`;
+                  ctx.fillText(title, padding, currentY);
 
-          ctx.fillStyle = '#c9a84c';
-          ctx.fillRect(0, height, width, 6);
+                  for(let i = 1; i < lines.length; i++) {
+                    currentY += bodySize * lineHeight;
+                    if (lines[i].startsWith('Price:')) {
+                      ctx.fillStyle = '#c9a84c';
+                      ctx.font = `bold ${bodySize}px sans-serif`;
+                    } else {
+                      ctx.fillStyle = '#444444';
+                      ctx.font = `${bodySize}px sans-serif`;
+                    }
+                    ctx.fillText(lines[i], padding, currentY);
+                  }
 
-          let currentY = height + padding + titleSize;
+                  ctx.fillStyle = '#aaaaaa';
+                  ctx.font = `italic ${Math.floor(bodySize * 0.8)}px sans-serif`;
+                  ctx.textAlign = 'right';
+                  ctx.fillText('SANGEET - Tune of Trends', width - padding, height + bannerHeight - padding);
 
-          ctx.fillStyle = '#060e09';
-          ctx.font = `bold ${titleSize}px sans-serif`;
-          ctx.fillText(title, padding, currentY);
-
-          for(let i = 1; i < lines.length; i++) {
-            currentY += bodySize * lineHeight;
-            if (lines[i].startsWith('Price:')) {
-              ctx.fillStyle = '#c9a84c';
-              ctx.font = `bold ${bodySize}px sans-serif`;
-            } else {
-              ctx.fillStyle = '#444444';
-              ctx.font = `${bodySize}px sans-serif`;
-            }
-            ctx.fillText(lines[i], padding, currentY);
-          }
-
-          ctx.fillStyle = '#aaaaaa';
-          ctx.font = `italic ${Math.floor(bodySize * 0.8)}px sans-serif`;
-          ctx.textAlign = 'right';
-          ctx.fillText('SANGEET - Tune of Trends', width - padding, height + bannerHeight - padding);
-
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const safeName = (product.name || 'design').replace(/[^a-z0-9]/gi, '_').substring(0, 30);
-              const file = new File([blob], `${safeName}.jpg`, { type: 'image/jpeg' });
-              resolve(file);
-            } else {
-              reject(new Error('Blob failed'));
-            }
-          }, 'image/jpeg', 0.95);
-        } catch (e) {
-          reject(e);
+                  canvas.toBlob((blob) => {
+                    if (blob) {
+                      const safeName = (p.name || 'design').replace(/[^a-z0-9]/gi, '_').substring(0, 30);
+                      // Differentiate file names if multiple images
+                      const fileName = p.images.length > 1 
+                        ? `Item_${pIdx + 1}_View_${imgIdx + 1}_${safeName}.jpg`
+                        : `Item_${pIdx + 1}_${safeName}.jpg`;
+                      resolve(new File([blob], fileName, { type: 'image/jpeg' }));
+                    } else {
+                      resolve(null);
+                    }
+                  }, 'image/jpeg', 0.95);
+                } catch (e) {
+                  console.error('Canvas error:', e);
+                  resolve(null);
+                }
+              };
+              img.onerror = () => resolve(null);
+              const url = imgObj.url;
+              img.src = url + (url.includes('?') ? '&' : '?') + 'cors=1';
+            });
+            filePromises.push(promise);
+          });
         }
-      };
-      
-      img.onerror = () => reject(new Error('Image load failed'));
-      
-      if (product.images && product.images.length > 0) {
-        const url = product.images[0].url;
-        img.src = url + (url.includes('?') ? '&' : '?') + 'cors=1';
-      } else {
-        reject(new Error('No image'));
-      }
-    });
-  };
-
-  const handleWhatsAppShare = async () => {
-    if (selectedIds.length === 0) {
-      toast.error('No products selected to share.');
-      return;
-    }
-
-    const selectedProducts = products.filter(p => selectedIds.includes(p._id));
-    const toastId = toast.loading('Generating branded images with details...', { duration: 10000 });
-
-    try {
-      const filePromises = selectedProducts.map(p => generateProductShareImage(p).catch(e => {
-        console.error('Failed to generate image for', p.name, e);
-        return null;
-      }));
+      });
       
       const generatedFiles = await Promise.all(filePromises);
       const validFiles = generatedFiles.filter(f => f !== null);
@@ -357,6 +342,27 @@ const Products = () => {
       if (err.name !== 'AbortError') {
         toast.error("Share action cancelled or failed.");
       }
+    }
+  };
+
+  const handleAddGroup = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('No products selected to group.');
+      return;
+    }
+    const groupName = window.prompt("Enter a compulsory name for this group:");
+    if (!groupName || groupName.trim() === '') {
+      toast.error('Group name is required!');
+      return;
+    }
+
+    try {
+      await createGroup(groupName.trim(), selectedIds);
+      toast.success(`Group "${groupName}" created successfully!`);
+      setSelectedIds([]); // Clear selection after group creation
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || 'Failed to create group');
     }
   };
 
@@ -481,6 +487,9 @@ const Products = () => {
             </button>
             <button className="btn-share-link" onClick={handleCopyLink}>
               <i className="bi bi-link-45deg" /> Copy Link
+            </button>
+            <button className="btn-share-link" onClick={handleAddGroup} style={{ background: '#0D2A1C', color: '#c9a84c' }}>
+              <i className="bi bi-collection" /> Add Group
             </button>
             <button className="btn-clear-selection" onClick={() => setSelectedIds([])}>
               <i className="bi bi-x" /> Clear

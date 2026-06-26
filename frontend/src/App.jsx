@@ -8,6 +8,7 @@ import AddProduct from './pages/AddProduct';
 import EditProduct from './pages/EditProduct';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Groups from './pages/Groups';
 
 // Wrapper for Auth & Admin Routing
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -41,6 +42,7 @@ function App() {
         {/* Public View Routes */}
         <Route path="/"                  element={<Home />} />
         <Route path="/products"          element={<Products />} />
+        <Route path="/groups"            element={<Groups />} />
 
         {/* Protected Admin Routes */}
         <Route path="/add-product"       element={<ProtectedRoute adminOnly><AddProduct /></ProtectedRoute>} />

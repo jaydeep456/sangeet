@@ -54,3 +54,7 @@ export const updateProduct = (id, formData) =>
   api.put(`/products/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
 export const deleteProduct = id => api.delete(`/products/${id}`);
+
+// Groups
+export const createGroup = (name, products) => api.post('/groups', { name, products });
+export const getGroups = () => api.get('/groups');

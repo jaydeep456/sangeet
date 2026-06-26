@@ -4,6 +4,7 @@ const cors    = require('cors');
 const connectDB = require('./config/db');
 const productRoutes = require('./routes/products');
 const authRoutes = require('./routes/auth');
+const groupRoutes = require('./routes/groups');
 const User       = require('./models/User');
 const bcrypt     = require('bcryptjs');
 
@@ -46,6 +47,7 @@ app.use(express.urlencoded({ extended: true }));
 // ── API Routes ───────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/groups', groupRoutes);
 
 // ── Health Check ─────────────────────────────────────────────
 app.get('/', (req, res) => {

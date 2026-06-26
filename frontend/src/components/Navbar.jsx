@@ -88,6 +88,11 @@ const Navbar = () => {
             <NavLink id="nav-collection" to="/products" className={({ isActive }) => `s-nav-link${isActive ? ' active' : ''}`} onClick={close}>
               <i className="bi bi-grid-3x3-gap" /> Collection
             </NavLink>
+
+            {/* Groups is public */}
+            <NavLink id="nav-groups" to="/groups" className={({ isActive }) => `s-nav-link${isActive ? ' active' : ''}`} onClick={close}>
+              <i className="bi bi-collection" /> Groups
+            </NavLink>
             
             {/* Add Product is admin only */}
             {isAdmin && (
