@@ -205,7 +205,16 @@ const Products = () => {
     navigator.clipboard.writeText(getShareLink());
     toast.success('Link copied to clipboard!');
   };
+  const handleWhatsAppShare = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('No products selected to share.');
+      return;
+    }
 
+    const selectedProducts = products.filter(p => selectedIds.includes(p._id));
+    const toastId = toast.loading('Generating branded images with details...', { duration: 10000 });
+
+    try {
       const filePromises = [];
       selectedProducts.forEach((p, pIdx) => {
         if (p.images && p.images.length > 0) {
