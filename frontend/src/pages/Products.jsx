@@ -177,7 +177,7 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, isSharedView, sharedIds]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
