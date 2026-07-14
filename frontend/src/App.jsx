@@ -9,6 +9,8 @@ import EditProduct from './pages/EditProduct';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Groups from './pages/Groups';
+import Cart from './pages/Cart';
+import AdminCarts from './pages/AdminCarts';
 
 // Wrapper for Auth & Admin Routing
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -43,10 +45,12 @@ function App() {
         <Route path="/"                  element={<Home />} />
         <Route path="/products"          element={<Products />} />
         <Route path="/groups"            element={<Groups />} />
+        <Route path="/cart"              element={<Cart />} />
 
         {/* Protected Admin Routes */}
         <Route path="/add-product"       element={<ProtectedRoute adminOnly><AddProduct /></ProtectedRoute>} />
         <Route path="/edit-product/:id"  element={<ProtectedRoute adminOnly><EditProduct /></ProtectedRoute>} />
+        <Route path="/admin/carts"       element={<ProtectedRoute adminOnly><AdminCarts /></ProtectedRoute>} />
 
         {/* Fallback */}
         <Route path="*"                  element={<Navigate to="/" replace />} />

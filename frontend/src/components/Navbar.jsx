@@ -93,11 +93,25 @@ const Navbar = () => {
             <NavLink id="nav-groups" to="/groups" className={({ isActive }) => `s-nav-link${isActive ? ' active' : ''}`} onClick={close}>
               <i className="bi bi-collection" /> Groups
             </NavLink>
-            
+
+            {/* Cart — visible to logged-in non-admin users */}
+            {token && !isAdmin && (
+              <NavLink id="nav-cart" to="/cart" className={({ isActive }) => `s-nav-link${isActive ? ' active' : ''}`} onClick={close}>
+                <i className="bi bi-basket2" /> My Cart
+              </NavLink>
+            )}
+
             {/* Add Product is admin only */}
             {isAdmin && (
               <NavLink id="nav-add" to="/add-product" className={({ isActive }) => `s-nav-link${isActive ? ' active' : ''}`} onClick={close}>
                 <i className="bi bi-plus-circle" /> Add Product
+              </NavLink>
+            )}
+
+            {/* Customer Carts — admin only */}
+            {isAdmin && (
+              <NavLink id="nav-admin-carts" to="/admin/carts" className={({ isActive }) => `s-nav-link${isActive ? ' active' : ''}`} onClick={close}>
+                <i className="bi bi-basket2" /> Carts
               </NavLink>
             )}
 

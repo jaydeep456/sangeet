@@ -58,3 +58,13 @@ export const deleteProduct = id => api.delete(`/products/${id}`);
 // Groups
 export const createGroup = (name, products) => api.post('/groups', { name, products });
 export const getGroups = () => api.get('/groups');
+
+// Cart (user)
+export const getMyCart       = ()                        => api.get('/cart');
+export const addToCart       = (productId, quantity = 1) => api.post('/cart/add', { productId, quantity });
+export const updateCartItem  = (itemId, quantity)        => api.put(`/cart/update/${itemId}`, { quantity });
+export const removeCartItem  = (itemId)                  => api.delete(`/cart/remove/${itemId}`);
+export const clearCart       = ()                        => api.delete('/cart/clear');
+
+// Cart (admin)
+export const getAllCarts      = ()                        => api.get('/cart/admin/all');

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { deleteProduct } from '../services/api';
+import { deleteProduct, addToCart } from '../services/api';
 import ImageLightbox from './ImageLightbox';
 
 const ProductCard = ({ product, onDeleted, isSelected, onToggleSelect }) => {
@@ -10,6 +10,8 @@ const ProductCard = ({ product, onDeleted, isSelected, onToggleSelect }) => {
   const [deleting, setDeleting]       = useState(false);
   const [activeImg, setActiveImg]     = useState(0);
   const [lightboxIdx, setLightboxIdx] = useState(null); // null = closed
+  const [addingCart, setAddingCart]   = useState(false);
+  const navigate = useNavigate();
 
   // Lock body scroll while delete modal is open
   useEffect(() => {
@@ -44,6 +46,24 @@ const ProductCard = ({ product, onDeleted, isSelected, onToggleSelect }) => {
     } finally {
       setDeleting(false);
       setShowModal(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem('sangeet_token');
+    if (!token) {
+      toast('Please login or sign up to add items to your cart 🛒', { icon: '🔐' });
+      navigate('/login');
+      return;
+    }
+    setAddingCart(true);
+    try {
+      await addToCart(product._id, 1);
+      toast.success(`"${product.name}" added to cart! 🛒`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to add to cart');
+    } finally {
+      setAddingCart(false);
     }
   };
 
@@ -126,7 +146,7 @@ const ProductCard = ({ product, onDeleted, isSelected, onToggleSelect }) => {
         </div>
 
         {/* Admin Actions */}
-        {isAdmin && (
+        {isAdmin ? (
           <div className="product-actions">
             <Link
               to={`/edit-product/${product._id}`}
@@ -141,6 +161,22 @@ const ProductCard = ({ product, onDeleted, isSelected, onToggleSelect }) => {
               onClick={() => setShowModal(true)}
             >
               <i className="bi bi-trash3" /> Delete
+            </button>
+          </div>
+        ) : (
+          <div className="product-actions">
+            <button
+              className="btn-add-cart"
+              id={`cart-${product._id}`}
+              onClick={handleAddToCart}
+              disabled={addingCart}
+              title="Add to Cart"
+            >
+              {addingCart ? (
+                <><span className="spinner-border spinner-border-sm me-1" /> Adding...</>
+              ) : (
+                <><i className="bi bi-basket2" /> Add to Cart</>
+              )}
             </button>
           </div>
         )}

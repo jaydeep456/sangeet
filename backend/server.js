@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const productRoutes = require('./routes/products');
 const authRoutes = require('./routes/auth');
 const groupRoutes = require('./routes/groups');
+const cartRoutes = require('./routes/cart');
 const User       = require('./models/User');
 const bcrypt     = require('bcryptjs');
 
@@ -48,6 +49,7 @@ app.use(express.urlencoded({ extended: true, limit: '500mb', parameterLimit: 100
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/cart', cartRoutes);
 
 // ── Health Check ─────────────────────────────────────────────
 app.get('/', (req, res) => {
