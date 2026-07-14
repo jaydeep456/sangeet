@@ -98,8 +98,8 @@ router.get('/:id', async (req, res) => {
 });
 
 // ─── POST /api/products ──────────────────────────────────────────────────
-// Creates a new product. Accepts up to 10 images as multipart/form-data field "images"
-router.post('/', protect, adminOnly, upload.array('images', 10), async (req, res) => {
+// Creates a new product. Accepts up to 50 images as multipart/form-data field "images"
+router.post('/', protect, adminOnly, upload.array('images', 50), async (req, res) => {
   try {
     const { name, price, size, description = '', category = 'Ethnic' } = req.body;
 
@@ -139,9 +139,9 @@ router.post('/', protect, adminOnly, upload.array('images', 10), async (req, res
 });
 
 // ─── PUT /api/products/:id ───────────────────────────────────────────────
-// Updates a product. Accepts up to 10 new images.
+// Updates a product. Accepts up to 50 new images.
 // Also accepts "removeImages" as a JSON array of publicIds to delete.
-router.put('/:id', protect, adminOnly, upload.array('images', 10), async (req, res) => {
+router.put('/:id', protect, adminOnly, upload.array('images', 50), async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
