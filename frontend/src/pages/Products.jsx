@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
-import { getProducts, createGroup } from '../services/api';
+import { getProducts, createGroup, addToCart } from '../services/api';
 
 
 const SORT_OPTIONS     = [
@@ -204,6 +204,36 @@ const Products = () => {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(getShareLink());
     toast.success('Link copied to clipboard!');
+  };
+
+  const handleAddToCartBulk = async () => {
+    const token = localStorage.getItem('sangeet_token');
+    if (!token) {
+      toast('Please login to add items to cart 🔐', { icon: '🔐' });
+      navigate('/login');
+      return;
+    }
+    if (selectedIds.length === 0) {
+      toast.error('No products selected.');
+      return;
+    }
+    const toastId = toast.loading(`Adding ${selectedIds.length} item(s) to cart...`);
+    let successCount = 0;
+    for (const id of selectedIds) {
+      try {
+        await addToCart(id, 1);
+        successCount++;
+      } catch (err) {
+        // continue even if one fails
+      }
+    }
+    toast.dismiss(toastId);
+    if (successCount > 0) {
+      toast.success(`${successCount} item(s) added to cart! 🛒`);
+      setSelectedIds([]);
+    } else {
+      toast.error('Failed to add items to cart. Please try again.');
+    }
   };
   const handleWhatsAppShare = async () => {
     if (selectedIds.length === 0) {
@@ -491,6 +521,12 @@ const Products = () => {
             <span className="count-badge">{selectedIds.length}</span> items selected
           </div>
           <div className="selection-actions">
+            {/* Add to Cart — only for non-admin logged-in users */}
+            {!isAdmin && (
+              <button className="btn-share-wa" style={{ background: 'linear-gradient(135deg, #c9a84c, #f5e6b8)', color: '#0D2A1C' }} onClick={handleAddToCartBulk}>
+                <i className="bi bi-basket2" /> Add to Cart
+              </button>
+            )}
             <button className="btn-share-wa" onClick={handleWhatsAppShare}>
               <i className="bi bi-whatsapp" /> Share
             </button>

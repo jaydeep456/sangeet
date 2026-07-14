@@ -7,7 +7,7 @@ const { JWT_SECRET, protect } = require('../middleware/auth');
 
 // Helper to generate JWT
 const generateToken = (id) => {
-  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
 };
 
 // ─── POST /api/auth/signup ──────────────────────────────────────────────
